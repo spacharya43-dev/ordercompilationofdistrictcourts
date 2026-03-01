@@ -404,12 +404,12 @@
     font-family: 'Noto Serif Devanagari', serif; line-height: 1.2;
   }
   .item-case-type {
-    font-size: 0.78rem; color: #2c1f0e; font-weight: 500; line-height: 1.25;
-    font-family: 'Noto Sans Devanagari', sans-serif;
-  }
-  .item-case-sub {
     font-size: 0.65rem; color: var(--muted); line-height: 1.2;
     overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  }
+  .item-case-sub {
+    font-size: 0.78rem; color: #2c1f0e; font-weight: 500; line-height: 1.25;
+    font-family: 'Noto Sans Devanagari', sans-serif;
   }
 
   /* ══════════ PANEL FOOTER ══════════ */
@@ -455,6 +455,10 @@
   .copy-order-btn.copied { background: rgba(26,92,42,0.12); border-color: var(--green-light); color: var(--green); }
   .copy-order-btn.copied svg { display: none; }
   .copy-order-btn.copied::after { content: '✓'; font-size: 0.75rem; font-weight: 700; line-height: 1; }
+  /* copy2 — body-only copy, blue tint */
+  .copy-body-btn { border-color: rgba(26,58,107,0.3); color: #3a6bcf; }
+  .copy-body-btn:hover { background: rgba(26,58,107,0.1); border-color: #5b8cd6; color: #5b8cd6; }
+  .copy-body-btn.copied { background: rgba(26,92,42,0.12); border-color: var(--green-light); color: var(--green); }
 
   /* ══════════ RIGHT PANEL ══════════ */
   #right-panel {
@@ -490,7 +494,7 @@
   .case-badge { background: linear-gradient(135deg, var(--red-seal), #6b1010); color: #f5e8c8; border-radius: 20px; padding: 4px 13px; font-size: 0.7rem; font-weight: 600; white-space: nowrap; flex-shrink: 0; align-self: flex-start; }
   .card-body { padding: 1.2rem 1.4rem 1.2rem 1.8rem; }
   .card-body h4 { font-family: 'Noto Serif Devanagari', serif; font-size: 0.72rem; color: var(--muted); font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 0.65rem; padding-bottom: 0.3rem; border-bottom: 1px solid rgba(184,134,42,0.15); }
-  .order-text { font-family: 'Noto Serif Devanagari', serif; font-size: 0.92rem; line-height: 1.9; color: var(--ink); white-space: pre-wrap; word-break: break-word; }
+  .order-text { font-size: 0.82rem; color: var(--ink); line-height: 1.75; white-space: pre-wrap; font-family: 'Noto Serif Devanagari', serif; margin: 0; padding: 0; border: none; background: transparent; }
   .card-footer { padding: 0.55rem 1.4rem 0.55rem 1.8rem; background: rgba(184,134,42,0.07); border-top: 1px solid rgba(184,134,42,0.18); font-size: 0.74rem; color: var(--muted); font-style: italic; display: flex; align-items: center; gap: 1rem; flex-wrap: wrap; }
   .card-footer .judge-name { margin-left: auto; font-weight: 600; font-style: normal; color: var(--ink); }
 
@@ -644,10 +648,11 @@
 <div id="top-header">
   <div class="header-emblem">⚖️</div>
   <div class="header-text">
-    <h1>आदेश दर्फण</h1>
-    <p> Order Viewer</p>  </div>
+    <h1>काठमाडौं जिल्ला अदालत</h1>
+    <p>आदेश दर्पण — Order Viewer</p>
+  </div>
   <div class="header-divider"></div>
-  <div class="header-sub">सङ्कलनकर्ता<br>श्री शिवप्रसाद आचार्य </div>
+  <div class="header-sub">माननीय जिल्ला न्यायाधीश<br>श्री ईश्वर पराजुली</div>
   <div class="header-divider"></div>
   <!-- LEFT SEARCH (in header) -->
   <div class="hdr-search" id="left-search-bar">
@@ -677,6 +682,7 @@
     <span class="search-count" id="rightSearchCount"></span>
     <label class="hdr-chk-label" title="नेपाली सामान्यीकरण"><input type="checkbox" id="rightNormChk" onchange="onRightSearch()"><span>स</span></label>
     <label class="hdr-chk-label" title="मिलेको मात्र देखाउनुहोस्"><input type="checkbox" id="rightFilterChk" onchange="onRightSearch()"><span>फि</span></label>
+    <label class="hdr-chk-label" title="मुद्दाको किसिम (type) अनुसार फिल्टर गर्नुहोस्"><input type="checkbox" id="rightFilter2Chk" onchange="onRightSearch()"><span>फि२</span></label>
   </div>
 </div>
 
@@ -847,18 +853,19 @@ function updateScrollArrows() {
 async function parseWithAI(rawText, filename) {
   const sys = `You are a Nepali court document parser.
 Extract ALL court orders from the raw text and return ONLY valid JSON — no markdown, no explanation.
-Return: { "label": "<filename without extension>", "cases": [ { "caseNo","petitionNo","party1","party1Role","party2","party2Role","type","subject","court","judge","date","order" } ] }
+Return: { "label": "<filename without extension>", "cases": [ { "caseNo","petitionNo","party1","party1Role","party2","party2Role","type","subject","court","judge","date","order","recognition" } ] }
 Fields:
 - caseNo: मुद्दा नं. value (e.g. 081-C1-0234)
-- petitionNo: निवेदन/नि.नं value if present (e.g. 082-FN-1111), else ""
-- party1: name of first party (वादी/निवेदक/रिट निवेदक etc), strip dot sequences
-- party1Role: their role label exactly as written (वादी / निवेदक / विपक्षी etc)
-- party2: name of second party (प्रतिवादी/विपक्षी etc), strip dot sequences
+- petitionNo: निवेदन/नि.नं value if present, else ""
+- party1: name of first party (वादी/निवेदक etc), strip dot sequences
+- party1Role: their role label exactly as written
+- party2: name of second party, strip dot sequences
 - party2Role: their role label exactly as written
 - type: मुद्दाः value, strip trailing ।
-- subject: विषयः value if present (e.g. "रोक्का गरी पाउँ"), else ""
+- subject: विषयः value if present (single short label), else ""
 - court, judge, date: as found
-- order: complete order paragraph, no separator lines
+- order: THE COMPLETE RAW TEXT of that case block, from the first line (श्री or court name) to the इति line (inclusive). Preserve all lines exactly.
+- recognition: leave as ""
 Include ALL cases. Count must match number of इति संवत् lines.`;
   const res = await fetch("https://api.anthropic.com/v1/messages", {
     method:"POST", headers:{"Content-Type":"application/json"},
@@ -990,21 +997,19 @@ function parseWithRegex(rawText, filename) {
     const courtLine=lines.find(l=>/अदालत/.test(l)&&!/(?:आदेश|कार्यविधि)/.test(l));
     const court=courtLine?courtLine.trim():'काठमाडौं जिल्ला अदालत';
 
-    // ── ORDER BODY ──
-    const aIdx=lines.findIndex(l=>/^आदेश\s*$/.test(l));
-    const mIdx=lines.findIndex((l,i)=>i>Math.max(aIdx,0)&&/मुद्दाः/.test(l));
-    const bodyStart=mIdx>=0?mIdx+1:(aIdx>=0?aIdx+1:0);
-    const bodyLines=[];
-    for(let i=bodyStart;i<lines.length;i++){
-      if(/^\.{4,}/.test(lines[i])||/^इति/.test(lines[i])||/^\s*न्यायाधीश\s*$/.test(lines[i])) break;
-      if(lines[i].length<3) continue;
-      bodyLines.push(lines[i]);
+    // ── FULL ORDER TEXT — entire block from first line to इति…शुभम् ──
+    // Capture all original lines; stop after the इति line (inclusive).
+    // Dot-separator lines (.....) are kept as visual separators.
+    const fullLines = [];
+    for(let i=0;i<lines.length;i++){
+      fullLines.push(lines[i]);
+      if(/^इति/.test(lines[i])) break; // include इति line then stop
     }
-    const order=bodyLines.join('\n').trim();
+    const order = fullLines.join('\n').trim();
 
     if(!caseNo&&!petitionNo&&order.length<20&&idx>0) return;
 
-    cases.push({ caseNo:caseNo||`(${idx+1})`, petitionNo, party1, party1Role, party2, party2Role, type, subject, court, judge, date, order });
+    cases.push({ caseNo:caseNo||`(${idx+1})`, petitionNo, party1, party1Role, party2, party2Role, type, subject, court, judge, date, order, recognition:'' });
   });
 
   // Warn if block count ≠ इति count (debug info only)
@@ -1037,19 +1042,20 @@ async function loadTxtFile(src, index, total) {
   catch { try{ parsed=parseWithRegex(rawText,filename); }catch{ updateFileRow(fileId,filename,'error','पार्स गर्न सकिएन'); return; } }
 
   const cases=(parsed.cases||[]).map((c,i)=>({
-    caseNo:     c.caseNo     || c.case_no    || `(${i+1})`,
-    petitionNo: c.petitionNo || c.petition_no|| '',
-    party1:     c.party1     || c.plaintiff  || '',
-    party1Role: c.party1Role || (c.plaintiff?'वादी':''),
-    party2:     c.party2     || c.defendant  || '',
-    party2Role: c.party2Role || (c.defendant?'प्रतिवादी':''),
-    type:       c.type       || '',
-    subject:    c.subject    || '',
-    court:      c.court      || 'काठमाडौं जिल्ला अदालत',
-    judge:      c.judge      || '',
-    date:       c.date       || '',
-    order:      c.order      || '',
-    id:         fileId+'_c'+i
+    caseNo:      c.caseNo      || c.case_no    || `(${i+1})`,
+    petitionNo:  c.petitionNo  || c.petition_no|| '',
+    party1:      c.party1      || c.plaintiff  || '',
+    party1Role:  c.party1Role  || (c.plaintiff?'वादी':''),
+    party2:      c.party2      || c.defendant  || '',
+    party2Role:  c.party2Role  || (c.defendant?'प्रतिवादी':''),
+    type:        c.type        || '',
+    subject:     c.subject     || '',
+    court:       c.court       || 'काठमाडौं जिल्ला अदालत',
+    judge:       c.judge       || '',
+    date:        c.date        || '',
+    order:       c.order       || '',
+    recognition: c.recognition || '',
+    id:          fileId+'_c'+i
   }));
   if(!cases.length){ updateFileRow(fileId,filename,'error','मुद्दा फेला परेन'); return; }
 
@@ -1120,21 +1126,22 @@ async function loadJsonFile(src, index, total) {
     return;
   }
 
-  // Normalise each case — accept both new (party1/party2) and legacy (plaintiff/defendant) fields
+  // Map JSON fields directly — fast, no legacy field juggling
   const cases=parsed.cases.map((c,i)=>({
-    caseNo:     c.caseNo     || c.case_no     || `(${i+1})`,
-    petitionNo: c.petitionNo || c.petition_no || '',
-    party1:     c.party1     || c.plaintiff   || c['वादी']      || '',
-    party1Role: c.party1Role || (c.plaintiff||c['वादी'] ? 'वादी' : ''),
-    party2:     c.party2     || c.defendant   || c['प्रतिवादी'] || '',
-    party2Role: c.party2Role || (c.defendant||c['प्रतिवादी'] ? 'प्रतिवादी' : ''),
-    type:       c.type       || c['मुद्दा']   || '',
-    subject:    c.subject    || c['विषय']     || '',
-    court:      c.court      || c['अदालत']    || 'काठमाडौं जिल्ला अदालत',
-    judge:      c.judge      || c['न्यायाधीश']|| '',
-    date:       c.date       || c['मिति']     || '',
-    order:      c.order      || c['आदेश']     || '',
-    id:         fileId+'_c'+i
+    caseNo:      c.caseNo      || `(${i+1})`,
+    petitionNo:  c.petitionNo  || '',
+    party1:      c.party1      || '',
+    party1Role:  c.party1Role  || '',
+    party2:      c.party2      || '',
+    party2Role:  c.party2Role  || '',
+    type:        c.type        || '',
+    subject:     c.subject     || '',
+    court:       c.court       || 'काठमाडौं जिल्ला अदालत',
+    judge:       c.judge       || '',
+    date:        c.date        || '',
+    order:       c.order       || '',
+    recognition: c.recognition || '',
+    id:          fileId+'_c'+i
   }));
 
   if(!cases.length){ updateFileRow(fileId,filename,'error','मुद्दा फेला परेन'); return; }
@@ -1189,7 +1196,15 @@ function updateAIStatus(t,p){ document.getElementById('ai-status-text').textCont
 // ═══════════════════════════════════════════════
 function downloadJson(fileId){
   const f=allFiles.find(x=>x.id===fileId);if(!f)return;
-  const blob=new Blob([JSON.stringify({filename:f.filename,label:f.label,parsedAt:new Date().toISOString(),totalCases:f.cases.length,cases:f.cases.map(({id,...r})=>r)},null,2)],{type:'application/json'}); // fields: caseNo,petitionNo,party1,party1Role,party2,party2Role,type,subject,court,judge,date,order
+  // Export clean schema: caseNo,petitionNo,party1,party1Role,party2,party2Role,type,subject,court,judge,date,order(full text),recognition
+  const exportCases=f.cases.map(({id,party1,party1Role,party2,party2Role,...rest})=>({
+    caseNo:rest.caseNo, petitionNo:rest.petitionNo,
+    party1, party1Role, party2, party2Role,
+    type:rest.type, subject:rest.subject,
+    court:rest.court, judge:rest.judge, date:rest.date,
+    order:rest.order, recognition:rest.recognition||''
+  }));
+  const blob=new Blob([JSON.stringify({filename:f.filename,label:f.label,parsedAt:new Date().toISOString(),totalCases:f.cases.length,cases:exportCases},null,2)],{type:'application/json'});
   const a=Object.assign(document.createElement('a'),{href:URL.createObjectURL(blob),download:f.filename.replace(/\.txt$/i,'')+'.json'});
   a.click();URL.revokeObjectURL(a.href);
   showToast('✓ JSON डाउनलोड भयो','success');
@@ -1269,9 +1284,10 @@ function rebuildCaseList(){
       const displayNo = c.petitionNo
         ? (c.caseNo && c.caseNo!==c.petitionNo ? `${c.petitionNo} (${c.caseNo})` : c.petitionNo)
         : c.caseNo;
-      const shortParty1=(c.party1||'').length>22?(c.party1||'').slice(0,22)+'…':(c.party1||'—');
-      // Label line: विषय if present, else type
-      const leftTypeLabel = c.subject || c.type || '(मुद्दाको किसिम अज्ञात)';
+      // Line 2: recognition (if present)
+      const recLabel = c.recognition || '';
+      // Line 3: subject if present, else type
+      const leftTypeLabel = c.subject || c.type || '(किसिम अज्ञात)';
 
       row.innerHTML=`
         <div class="item-check-zone">
@@ -1279,8 +1295,8 @@ function rebuildCaseList(){
         </div>
         <div class="item-content">
           <div class="item-case-no">${displayNo}</div>
+          ${recLabel ? `<div class="item-case-sub">${recLabel}</div>` : ''}
           <div class="item-case-type">${leftTypeLabel}</div>
-          <div class="item-case-sub">पक्ष१: ${shortParty1}</div>
         </div>`;
 
       row.addEventListener('click',e=>{
@@ -1436,6 +1452,7 @@ function renderSelectedOrders(){
       const card = document.createElement('div');
       card.className='order-card';
       card.dataset.id = c.id;
+      card.dataset.type = (c.type||'').toLowerCase();
       card.innerHTML=`
         <div class="card-header">
           <div class="card-meta">
@@ -1449,8 +1466,9 @@ function renderSelectedOrders(){
           <div class="case-badge">${badgeLabel}</div>
         </div>
         <div class="card-body">
-          <h4>${bodyHeading} <button class="copy-order-btn" onclick="copyOrder(this)" title="आदेश प्रतिलिपि गर्नुहोस्"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="4" width="9" height="10" rx="1.5"/><path d="M3 11V3a1 1 0 0 1 1-1h7"/></svg></button></h4>
-          <div class="order-text">${c.order||'(आदेश उपलब्ध छैन)'}</div>
+          <h4>${bodyHeading}
+            <button class="copy-order-btn" onclick="copyOrder(this)" title="सम्पूर्ण आदेश प्रतिलिपि गर्नुहोस्"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="4" width="9" height="10" rx="1.5"/><path d="M3 11V3a1 1 0 0 1 1-1h7"/></svg></button><button class="copy-order-btn copy-body-btn" onclick="copyOrderBody(this)" title="यसमा…गर्नू प्रतिलिपि गर्नुहोस्"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h8M4 9h6M4 12h4"/><rect x="1" y="2" width="14" height="12" rx="1.5"/></svg></button></h4>
+          <pre class="order-text">${c.order||'(आदेश उपलब्ध छैन)'}</pre>
         </div>
         <div class="card-footer">
           <span>📅 इति संवत् ${c.date||'—'} रोज १ शुभम्</span>
@@ -1514,28 +1532,66 @@ function resetPanel(){
 // COPY ORDER TEXT TO CLIPBOARD
 // ═══════════════════════════════════════════════
 function copyOrder(btn){
-  // Walk up to card-body, then find .order-text
   const cardBody = btn.closest('.card-body');
   if(!cardBody) return;
   const orderText = cardBody.querySelector('.order-text');
   if(!orderText) return;
-  const text = orderText.innerText || orderText.textContent || '';
-  navigator.clipboard.writeText(text.trim()).then(()=>{
+  const text = (orderText.innerText || orderText.textContent || '').trim();
+  _doCopy(btn, text, '✓ आदेश प्रतिलिपि भयो');
+}
+
+function copyOrderBody(btn){
+  // Extract only the order body: from यसमा (or प्रस्तुत) to गर्नू line
+  const cardBody = btn.closest('.card-body');
+  if(!cardBody) return;
+  const orderText = cardBody.querySelector('.order-text');
+  if(!orderText) return;
+  const fullText = (orderText.innerText || orderText.textContent || '');
+  const lines = fullText.split('\n');
+
+  // Find start line: first line containing यसमा or प्रस्तुत
+  let startIdx = lines.findIndex(l => /यसमा|प्रस्तुत/.test(l));
+  if(startIdx < 0) startIdx = 0; // fallback: whole text
+
+  // Find end line: last line that ends with गर्नू (with optional punctuation/spaces)
+  // Also accept गर्नुस् / गर्नुहोस् / गर्छ । as order-closing markers
+  const orderEndRe = /(?:गर्नू|गर्नु|गर्नुस्|गर्नुहोस्|गर्छ)\s*[।.]?\s*$/;
+  // Also stop before signature zone: न्यायाधीश / इति / judge lines
+  const sigRe = /^(?:न्यायाधीश|इति|\.{4,})/;
+
+  let endIdx = startIdx;
+  for(let i = startIdx; i < lines.length; i++){
+    if(sigRe.test(lines[i].trim())) break; // stop before signature
+    if(orderEndRe.test(lines[i].trim())) endIdx = i; // update to latest गर्नू line
+  }
+  // If no गर्नू found, take everything from startIdx up to (but not including) sig zone
+  if(endIdx === startIdx){
+    for(let i = startIdx; i < lines.length; i++){
+      if(sigRe.test(lines[i].trim())) break;
+      endIdx = i;
+    }
+  }
+
+  const body = lines.slice(startIdx, endIdx + 1).join('\n').trim();
+  if(!body){ showToast('यसमा…गर्नू भाग फेला परेन','info'); return; }
+  _doCopy(btn, body, '✓ आदेश अंश प्रतिलिपि भयो');
+}
+
+function _doCopy(btn, text, toastMsg){
+  navigator.clipboard.writeText(text).then(()=>{
     btn.classList.add('copied');
     setTimeout(()=>btn.classList.remove('copied'), 1800);
-    showToast('✓ आदेश प्रतिलिपि भयो','success');
+    showToast(toastMsg,'success');
   }).catch(()=>{
-    // Fallback for older browsers
     const ta = document.createElement('textarea');
-    ta.value = text.trim();
+    ta.value = text;
     ta.style.position='fixed'; ta.style.opacity='0';
-    document.body.appendChild(ta);
-    ta.select();
+    document.body.appendChild(ta); ta.select();
     document.execCommand('copy');
     document.body.removeChild(ta);
     btn.classList.add('copied');
     setTimeout(()=>btn.classList.remove('copied'), 1800);
-    showToast('✓ आदेश प्रतिलिपि भयो','success');
+    showToast(toastMsg,'success');
   });
 }
 
@@ -1788,10 +1844,11 @@ function clearLeftSearch(){
 // RIGHT PANEL SEARCH
 // ════════════════════════════════════════════════════════
 function onRightSearch(){
-  const inp    = document.getElementById('rightSearchInput');
-  const norm   = document.getElementById('rightNormChk').checked;
-  const filter = document.getElementById('rightFilterChk').checked;
-  const q      = inp.value.trim();
+  const inp     = document.getElementById('rightSearchInput');
+  const norm    = document.getElementById('rightNormChk').checked;
+  const filter  = document.getElementById('rightFilterChk').checked;
+  const filter2 = document.getElementById('rightFilter2Chk').checked;
+  const q       = inp.value.trim();
   rightSearch.query   = q;
   rightSearch.useNorm = norm;
   rightSearch.filter  = filter;
@@ -1817,7 +1874,21 @@ function onRightSearch(){
   const normQ = maybeNorm(q, norm);
 
   document.querySelectorAll('.order-card[data-id]').forEach(card=>{
-    // Search across entire card text (header + body)
+    // फि२: filter by type (case name) field only — hide card if type doesn't match
+    if(filter2){
+      const cardType = maybeNorm(card.dataset.type||'', norm);
+      if(!cardType.toLowerCase().includes(normQ.toLowerCase())){
+        card.classList.add('rp-hidden');
+        return;
+      }
+      // Type matches — show card but don't require full-text match
+      // Still highlight within card for context
+      const marks = highlightInElement(card, normQ, norm, 'sh');
+      rightSearch.hits.push(...marks);
+      return;
+    }
+
+    // Normal search: across entire card text
     const cardText = maybeNorm(card.innerText||card.textContent||'', norm);
     const hasMatch = cardText.toLowerCase().includes(normQ.toLowerCase());
 
